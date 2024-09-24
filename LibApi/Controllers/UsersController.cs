@@ -8,7 +8,7 @@ using LibApi.Requests;
 namespace LibApi.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/user")]
     public class UsersController : Controller
     {
         readonly LibApiContext _context;
@@ -17,7 +17,20 @@ namespace LibApi.Controllers
         {
             _context = context;
         }
-        
-        
+
+        [HttpPost("register")]
+        public async Task<IActionResult> RegisterUser(CreateNewUser request)
+        {
+            var isUserExists = _context.Users.Any(i => i.Login == request.Login);
+
+            if (isUserExists)
+                return BadRequest($"There is already user with login {request.Login}");
+
+            var user = Utils.CreateDBEntity<User, CreateNewUser>(request);
+
+            await _context.Users.AddAsync(user);
+            await _context.SaveChangesAsync();
+            return Ok(user.Id);
+        }
     }
 }
