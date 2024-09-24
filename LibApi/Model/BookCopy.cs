@@ -8,5 +8,10 @@ public class BookCopy : DbEntity
     public int BookId { get; set; }
     public Book Book { get; set; }
     
-    
+    public decimal Cost { get; set; }
+    public DateOnly PurchaseDate { get; set; }
+
+    [ForeignKey("User")]
+    public int? UserId { get; set; }
+    public User? User { get; set; }
 }
