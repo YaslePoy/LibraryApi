@@ -2,16 +2,15 @@
 
 namespace TestApi2.Model
 {
-    public class User
+    public class User : DbEntity
     {
-        [Key]
-        public int Id { get; set; }
         [Required]
         public string Name { get; set; }
         [Required]
         public string Surname { get; set; }
         public DateTime BirthDate { get; set; }
         public string About { get; set; }
+        public string Phone { get; set; }
         [Required]
         public string Login { get; set; }
         [Required]
