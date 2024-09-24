@@ -55,7 +55,7 @@ namespace LibApi.Controllers
         }
 
         [HttpPatch]
-        public async Task<ActionResult> UpdateUser([FromQuery] UpdateUserRequest request)
+        public async Task<ActionResult> UpdateUser([FromBody] UpdateUserRequest request)
         {
             var user = _context.Users.FirstOrDefault(i => i.Id == request.Id);
             
