@@ -40,7 +40,7 @@ public class BooksController : Controller
         if (book is not null)
             return BadRequest("That book is registered");
 
-        Utils.TransferData(book, data);
+        book = Utils.TransferData<Book, BookData>(data);
 
         await _libApi.Books.AddAsync(book);
         await _libApi.SaveChangesAsync();
@@ -62,13 +62,13 @@ public class BooksController : Controller
         return Ok();
     }
     
-    [HttpGet]
-    public async Task<ActionResult> DeleteUser(int userId)
+    [HttpDelete("{bookId}")]
+    public async Task<ActionResult> DeleteBook(int bookId)
     {
-        var user = _libApi.Books.FirstOrDefault(i => i.Id == userId);
+        var user = _libApi.Books.FirstOrDefault(i => i.Id == bookId);
 
         if (user is null)
-            return BadRequest($"No user with id {userId}");
+            return BadRequest($"No user with id {bookId}");
 
         _libApi.Books.Remove(user);
         await _libApi.SaveChangesAsync();

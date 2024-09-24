@@ -9,7 +9,7 @@ public class BookCopy : DbEntity
     public Book Book { get; set; }
     
     public decimal Cost { get; set; }
-    public DateOnly PurchaseDate { get; set; }
+    public DateTime PurchaseDate { get; set; }
 
     [ForeignKey("User")]
     public int? UserId { get; set; }

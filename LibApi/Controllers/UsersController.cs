@@ -43,7 +43,7 @@ namespace LibApi.Controllers
             return Ok(_context.Users.ToList().Select(Utils.TransferData<GetUserResponse, User>).ToList());
         }
 
-        [HttpGet]
+        [HttpGet("{userId}")]
         public ActionResult GetUserById(int userId)
         {
             var user = _context.Users.FirstOrDefault(i => i.Id == userId);
@@ -69,7 +69,7 @@ namespace LibApi.Controllers
             return Ok();
         }
         
-        [HttpGet]
+        [HttpDelete("{userId}")]
         public async Task<ActionResult> DeleteUser(int userId)
         {
             var user = _context.Users.FirstOrDefault(i => i.Id == userId);
@@ -82,7 +82,7 @@ namespace LibApi.Controllers
             return Ok();
         }
         
-        [HttpGet]
+        [HttpGet("{userId}/books")]
         public async Task<ActionResult> GetBooksOfUser(int userId)
         {
             var user = _context.Users.FirstOrDefault(i => i.Id == userId);

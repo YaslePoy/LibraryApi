@@ -52,7 +52,7 @@ public class GenresController : Controller
         return Ok();
     }
 
-    [HttpDelete]
+    [HttpDelete("{genreId}")]
     public async Task<ActionResult> DeleteGenre(int genreId)
     {
         var genre = _context.Genres.FirstOrDefault(i => i.Id == genreId);
