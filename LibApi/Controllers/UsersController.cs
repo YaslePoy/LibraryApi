@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using LibApi.DataBaseContext;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using TestApi2.DataBaseContext;
-using TestApi2.Model;
-using TestApi2.Requests;
+using LibApi.Model;
+using LibApi.Requests;
 
-namespace TestApi2.Controllers
+namespace LibApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

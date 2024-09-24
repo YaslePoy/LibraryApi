@@ -1,4 +1,4 @@
-﻿namespace TestApi2.Model;
+﻿namespace LibApi.Model;
 
 public class Book : DbEntity
 {

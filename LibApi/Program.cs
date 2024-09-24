@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using TestApi2.DataBaseContext;
+using LibApi.DataBaseContext;
 
 var builder = WebApplication.CreateBuilder(args);
 

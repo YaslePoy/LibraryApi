@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace TestApi2.Model;
+namespace LibApi.Model;
 
 public abstract class DbEntity
 {

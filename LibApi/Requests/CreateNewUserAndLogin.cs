@@ -1,4 +1,4 @@
-﻿namespace TestApi2.Requests
+﻿namespace LibApi.Requests
 {
     public class CreateNewUserAndLogin
     {

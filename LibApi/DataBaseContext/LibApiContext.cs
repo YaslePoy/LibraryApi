@@ -1,7 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
-using TestApi2.Model;
+﻿using LibApi.Model;
+using Microsoft.EntityFrameworkCore;
 
-namespace TestApi2.DataBaseContext
+namespace LibApi.DataBaseContext
 {
     public class LibApiContext : DbContext
     {
