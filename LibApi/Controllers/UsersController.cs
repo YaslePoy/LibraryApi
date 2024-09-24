@@ -68,5 +68,30 @@ namespace LibApi.Controllers
 
             return Ok();
         }
+        
+        [HttpGet]
+        public async Task<ActionResult> DeleteUser(int userId)
+        {
+            var user = _context.Users.FirstOrDefault(i => i.Id == userId);
+
+            if (user is null)
+                return BadRequest($"No user with id {userId}");
+
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+        
+        [HttpGet]
+        public async Task<ActionResult> GetBooksOfUser(int userId)
+        {
+            var user = _context.Users.FirstOrDefault(i => i.Id == userId);
+
+            if (user is null)
+                return BadRequest($"No user with id {userId}");
+
+            var books = _context.BookCopies.Where(i => i.UserId == userId).ToList().Select(Utils.TransferData<BookCopyResponse, BookCopy>);
+            return Ok(books);
+        }
     }
 }
