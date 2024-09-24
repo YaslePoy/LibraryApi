@@ -30,7 +30,10 @@ namespace LibApi.Controllers
 
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
-            return Ok(user.Id);
+            return Ok(new {
+                userId =
+                user.Id
+            });
         }
     }
 }
