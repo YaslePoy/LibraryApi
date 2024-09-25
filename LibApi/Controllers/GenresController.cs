@@ -44,7 +44,7 @@ public class GenresController : Controller
     {
         var genre = _context.Genres.FirstOrDefault(i => i.Id == genreId);
         if (genre is null)
-            return BadRequest("That genre does not exists");
+            return NotFound("That genre does not exists");
 
         genre.Name = newName;
 
@@ -57,7 +57,7 @@ public class GenresController : Controller
     {
         var genre = _context.Genres.FirstOrDefault(i => i.Id == genreId);
         if (genre is null)
-            return BadRequest("That genre does not exists");
+            return NotFound("That genre does not exists");
 
         _context.Remove(genre);
         await _context.SaveChangesAsync();

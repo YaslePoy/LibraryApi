@@ -14,7 +14,7 @@ namespace LibApi.Controllers
     {
         readonly LibApiContext _context;
 
-        public UsersController(LibApiContext context) 
+        public UsersController(LibApiContext context)
         {
             _context = context;
         }
@@ -31,12 +31,13 @@ namespace LibApi.Controllers
 
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
-            return Ok(new {
+            return Ok(new
+            {
                 userId =
-                user.Id
+                    user.Id
             });
         }
-        
+
         [HttpGet("all")]
         public ActionResult GetAllUsers()
         {
@@ -49,7 +50,7 @@ namespace LibApi.Controllers
             var user = _context.Users.FirstOrDefault(i => i.Id == userId);
 
             if (user is null)
-                return BadRequest($"No user with id {userId}");
+                return NotFound($"No user with id {userId}");
 
             return Ok(Utils.TransferData<GetUserResponse, User>(user));
         }
@@ -58,9 +59,9 @@ namespace LibApi.Controllers
         public async Task<ActionResult> UpdateUser([FromBody] UpdateUserRequest request)
         {
             var user = _context.Users.FirstOrDefault(i => i.Id == request.Id);
-            
+
             if (user is null)
-                return BadRequest($"No user with id {request.Id}");
+                return NotFound($"No user with id {request.Id}");
 
             Utils.TransferData(user, request);
 
@@ -68,29 +69,30 @@ namespace LibApi.Controllers
 
             return Ok();
         }
-        
+
         [HttpDelete("{userId}")]
         public async Task<ActionResult> DeleteUser(int userId)
         {
             var user = _context.Users.FirstOrDefault(i => i.Id == userId);
 
             if (user is null)
-                return BadRequest($"No user with id {userId}");
+                return NotFound($"No user with id {userId}");
 
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
             return Ok();
         }
-        
+
         [HttpGet("{userId}/books")]
         public async Task<ActionResult> GetBooksOfUser(int userId)
         {
             var user = _context.Users.FirstOrDefault(i => i.Id == userId);
 
             if (user is null)
-                return BadRequest($"No user with id {userId}");
+                return NotFound($"No user with id {userId}");
 
-            var books = _context.BookCopies.Where(i => i.UserId == userId).ToList().Select(Utils.TransferData<BookCopyResponse, BookCopy>);
+            var books = _context.BookCopies.Where(i => i.UserId == userId).ToList()
+                .Select(Utils.TransferData<BookCopyResponse, BookCopy>);
             return Ok(books);
         }
     }

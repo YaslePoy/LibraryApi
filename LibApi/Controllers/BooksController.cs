@@ -28,7 +28,7 @@ public class BooksController : Controller
     {
         var book = _libApi.Books.FirstOrDefault(i => i.Id == bookId);
         if (book is null)
-            return BadRequest("There is no book with that Id");
+            return NotFound("No book with that Id");
 
         return Ok(Utils.TransferData<BookData, Book>(book));
     }
@@ -54,7 +54,7 @@ public class BooksController : Controller
         var book = _libApi.Books.FirstOrDefault(i => i.Id == id);
 
         if (book is null)
-            return BadRequest($"No book with id {id}");
+            return NotFound($"No book with id {id}");
 
         Utils.TransferData(book, request);
 
@@ -62,14 +62,14 @@ public class BooksController : Controller
 
         return Ok();
     }
-    
+
     [HttpDelete("{bookId}")]
     public async Task<ActionResult> DeleteBook(int bookId)
     {
         var book = _libApi.Books.FirstOrDefault(i => i.Id == bookId);
 
         if (book is null)
-            return BadRequest($"No user with id {bookId}");
+            return NotFound($"No user with id {bookId}");
 
         _libApi.Books.Remove(book);
         await _libApi.SaveChangesAsync();
@@ -86,15 +86,14 @@ public class BooksController : Controller
 
         return Ok(new { copyId = copy.Id });
     }
-    
-    [HttpGet("{bookId}/count")]
 
+    [HttpGet("{bookId}/count")]
     public ActionResult CountOfCopies(int bookId)
     {
         var book = _libApi.Books.FirstOrDefault(i => i.Id == bookId);
 
         if (book is null)
-            return BadRequest($"No book with id {bookId}");
+            return NotFound($"No book with id {bookId}");
 
         return Ok(_libApi.BookCopies.Count(i => i.BookId == bookId));
     }
@@ -104,11 +103,11 @@ public class BooksController : Controller
     {
         var book = _libApi.Books.FirstOrDefault(i => i.Id == bookId);
         if (book is null)
-            return BadRequest($"No book with id {bookId}");
-        
+            return NotFound($"No book with id {bookId}");
+
         var genre = _libApi.Genres.FirstOrDefault(i => i.Id == genreId);
         if (genre is null)
-            return BadRequest($"No genre with id {genreId}");
+            return NotFound($"No genre with id {genreId}");
 
         var rent = new BooksGenre
         {
@@ -125,7 +124,7 @@ public class BooksController : Controller
     {
         var genre = _libApi.Genres.FirstOrDefault(i => i.Id == genreId);
         if (genre is null)
-            return BadRequest($"No genre with id {genreId}");
+            return NotFound($"No genre with id {genreId}");
 
         return Ok(_libApi.BooksGenres.Where(i => i.GenreId == genreId).Include(i => i.Book).Select(i => i.Book));
     }
@@ -133,12 +132,26 @@ public class BooksController : Controller
     [HttpGet("author")]
     public ActionResult GetBooksByAuthor(string author)
     {
-        return Ok(_libApi.Books.ToList().Where(i => Utils.LevenshteinDistance(i.Author, author) <= 2).Select(Utils.TransferData<BookData, Book>));
+        return Ok(_libApi.Books.ToList().Where(i => Utils.LevenshteinDistance(i.Author, author) <= 2)
+            .Select(Utils.TransferData<BookData, Book>));
     }
-    
+
     [HttpGet("name")]
     public ActionResult GetBooksByName(string name)
     {
-        return Ok(_libApi.Books.ToList().Where(i => Utils.LevenshteinDistance(i.Name, name) <= 2).Select(Utils.TransferData<BookData, Book>));
+        return Ok(_libApi.Books.ToList().Where(i => Utils.LevenshteinDistance(i.Name, name) <= 2)
+            .Select(Utils.TransferData<BookData, Book>));
+    }
+
+    [HttpGet("copies")]
+    public ActionResult GetAllCopies()
+    {
+        return Ok(_libApi.BookCopies.Include(i => i.Book).ToList());
+    }
+
+    [HttpGet("copies/{copyId}")]
+    public ActionResult GetCopy(int copyId)
+    {
+        return Ok(_libApi.BookCopies.Include(i => i.Book).FirstOrDefault(i => i.Id == copyId));
     }
 }

@@ -23,11 +23,14 @@ public class RentController : Controller
     {
         var user = _libApi.Users.FirstOrDefault(i => i.Id == command.UserId);
         if (user is null)
-            return BadRequest($"No user with id {command.UserId}");
+            return NotFound($"No user with id {command.UserId}");
 
         var book = _libApi.BookCopies.FirstOrDefault(i => i.Id == command.BookCopyId);
         if (book is null)
-            return BadRequest($"No book copy with id {command.UserId}");
+            return NotFound($"No book copy with id {command.UserId}");
+
+        if (book.UserId is not null)
+            return BadRequest("That book is already in rent");
 
         var rent = new BookRental
         {
@@ -47,7 +50,7 @@ public class RentController : Controller
     {
         var rent = _libApi.BookRentals.Include(i => i.BookCopy).FirstOrDefault(i => i.Id == rentId);
         if (rent is null)
-            return BadRequest($"No rent with id {rentId}");
+            return NotFound($"No rent with id {rentId}");
 
         rent.IsReturned = true;
         rent.BookCopy.UserId = null;
@@ -63,7 +66,7 @@ public class RentController : Controller
     {
         var user = _libApi.Users.FirstOrDefault(i => i.Id == userId);
         if (user is null)
-            return BadRequest($"No user with id {userId}");
+            return NotFound($"No user with id {userId}");
 
         return Ok(_libApi.BookRentals.Where(i => i.UserId == userId).Include(i => i.BookCopy)
             .Include(i => i.BookCopy.Book).ToList());
@@ -74,7 +77,7 @@ public class RentController : Controller
     {
         var copy = _libApi.BookCopies.FirstOrDefault(i => i.Id == copyId);
         if (copy is null)
-            return BadRequest($"No book copy with id {copyId}");
+            return NotFound($"No book copy with id {copyId}");
 
         return Ok(_libApi.BookRentals.Where(i => i.BookCopyId == copyId).Include(i => i.User).ToList());
     }
