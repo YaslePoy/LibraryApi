@@ -2,6 +2,7 @@
 using LibApi.Model;
 using LibApi.Requests;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace LibApi.Controllers;
 
@@ -50,12 +51,12 @@ public class BooksController : Controller
     [HttpPatch("{id:int}")]
     public async Task<ActionResult> UpdateBook(int id, [FromBody] BookData request)
     {
-        var user = _libApi.Books.FirstOrDefault(i => i.Id == id);
+        var book = _libApi.Books.FirstOrDefault(i => i.Id == id);
 
-        if (user is null)
+        if (book is null)
             return BadRequest($"No book with id {id}");
 
-        Utils.TransferData(user, request);
+        Utils.TransferData(book, request);
 
         await _libApi.SaveChangesAsync();
 
@@ -65,13 +66,79 @@ public class BooksController : Controller
     [HttpDelete("{bookId}")]
     public async Task<ActionResult> DeleteBook(int bookId)
     {
-        var user = _libApi.Books.FirstOrDefault(i => i.Id == bookId);
+        var book = _libApi.Books.FirstOrDefault(i => i.Id == bookId);
 
-        if (user is null)
+        if (book is null)
             return BadRequest($"No user with id {bookId}");
 
-        _libApi.Books.Remove(user);
+        _libApi.Books.Remove(book);
         await _libApi.SaveChangesAsync();
         return Ok();
+    }
+
+    [HttpPost("{bookId}/release")]
+    public async Task<ActionResult> RegisterCopy(int bookId, decimal cost)
+    {
+        var copy = new BookCopy { BookId = bookId, Cost = cost, PurchaseDate = DateTime.Now };
+
+        await _libApi.BookCopies.AddAsync(copy);
+        await _libApi.SaveChangesAsync();
+
+        return Ok(new { copyId = copy.Id });
+    }
+    
+    [HttpGet("{bookId}/count")]
+
+    public ActionResult CountOfCopies(int bookId)
+    {
+        var book = _libApi.Books.FirstOrDefault(i => i.Id == bookId);
+
+        if (book is null)
+            return BadRequest($"No book with id {bookId}");
+
+        return Ok(_libApi.BookCopies.Count(i => i.BookId == bookId));
+    }
+
+    [HttpPost("{bookId}/genre/{genreId}")]
+    public async Task<ActionResult> AddGenreToBook(int bookId, int genreId)
+    {
+        var book = _libApi.Books.FirstOrDefault(i => i.Id == bookId);
+        if (book is null)
+            return BadRequest($"No book with id {bookId}");
+        
+        var genre = _libApi.Genres.FirstOrDefault(i => i.Id == genreId);
+        if (genre is null)
+            return BadRequest($"No genre with id {genreId}");
+
+        var rent = new BooksGenre
+        {
+            BookId = bookId, GenreId = genreId
+        };
+
+        await _libApi.BooksGenres.AddAsync(rent);
+        await _libApi.SaveChangesAsync();
+        return Ok();
+    }
+
+    [HttpGet("genre/{genreId}")]
+    public ActionResult GetBooksByGenre(int genreId)
+    {
+        var genre = _libApi.Genres.FirstOrDefault(i => i.Id == genreId);
+        if (genre is null)
+            return BadRequest($"No genre with id {genreId}");
+
+        return Ok(_libApi.BooksGenres.Where(i => i.GenreId == genreId).Include(i => i.Book).Select(i => i.Book));
+    }
+
+    [HttpGet("author")]
+    public ActionResult GetBooksByAuthor(string author)
+    {
+        return Ok(_libApi.Books.ToList().Where(i => Utils.LevenshteinDistance(i.Author, author) <= 2).Select(Utils.TransferData<BookData, Book>));
+    }
+    
+    [HttpGet("name")]
+    public ActionResult GetBooksByName(string name)
+    {
+        return Ok(_libApi.Books.ToList().Where(i => Utils.LevenshteinDistance(i.Name, name) <= 2).Select(Utils.TransferData<BookData, Book>));
     }
 }

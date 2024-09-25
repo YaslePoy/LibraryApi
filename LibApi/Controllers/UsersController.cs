@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 namespace LibApi.Controllers
 {
     [ApiController]
-    [Route("api/users")]
+    [Route("api/[controller]")]
     public class UsersController : Controller
     {
         readonly LibApiContext _context;
@@ -20,7 +20,7 @@ namespace LibApi.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> RegisterUser(CreateNewUser request)
+        public async Task<ActionResult> RegisterUser(CreateNewUser request)
         {
             var isUserExists = _context.Users.Any(i => i.Login == request.Login);
 
