@@ -1,6 +1,8 @@
 ﻿using LibApi.DataBaseContext;
 using LibApi.Model;
 using LibApi.Requests;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,6 +35,7 @@ public class BooksController : Controller
         return Ok(Utils.TransferData<BookData, Book>(book));
     }
 
+    [Authorize]
     [HttpPost]
     public async Task<ActionResult> CreateBook([FromBody] BookData data)
     {

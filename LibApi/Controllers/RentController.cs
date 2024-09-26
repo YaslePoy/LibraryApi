@@ -40,6 +40,7 @@ public class RentController : Controller
             RentEnd = command.Until
         };
 
+        book.UserId = command.UserId;
         await _libApi.BookRentals.AddAsync(rent);
         await _libApi.SaveChangesAsync();
         return Ok(new { rentId = rent.Id });
@@ -68,8 +69,8 @@ public class RentController : Controller
         if (user is null)
             return NotFound($"No user with id {userId}");
 
-        return Ok(_libApi.BookRentals.Where(i => i.UserId == userId).Include(i => i.BookCopy)
-            .Include(i => i.BookCopy.Book).ToList());
+        return Ok(_libApi.BookRentals.Where(i => i.UserId == userId).ToList()
+            .Select(Utils.TransferData<RentHistoryForUser, BookRental>).ToList());
     }
 
     [HttpGet("history/book/{copyId}")]
@@ -79,13 +80,14 @@ public class RentController : Controller
         if (copy is null)
             return NotFound($"No book copy with id {copyId}");
 
-        return Ok(_libApi.BookRentals.Where(i => i.BookCopyId == copyId).Include(i => i.User).ToList());
+        return Ok(_libApi.BookRentals.Where(i => i.BookCopyId == copyId).ToList()
+            .Select(Utils.TransferData<RentHistoryForCopy, BookRental>).ToList());
     }
 
     [HttpGet("current")]
     public ActionResult GetCurrentStatuses()
     {
-        return Ok(_libApi.BookRentals.Where(i => i.IsReturned == false).Include(i => i.User).Include(i => i.BookCopy)
+        return Ok(_libApi.BookRentals.Where(i => i.IsReturned == false).Include(i => i.BookCopy)
             .Include(i => i.BookCopy.Book).ToList());
     }
 }

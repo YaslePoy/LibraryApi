@@ -1,10 +1,13 @@
-﻿using LibApi.DataBaseContext;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using LibApi.DataBaseContext;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LibApi.Model;
 using LibApi.Requests;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.IdentityModel.Tokens;
 
 namespace LibApi.Controllers
 {
@@ -94,6 +97,30 @@ namespace LibApi.Controllers
             var books = _context.BookCopies.Where(i => i.UserId == userId).ToList()
                 .Select(Utils.TransferData<BookCopyResponse, BookCopy>);
             return Ok(books);
+        }
+
+        [HttpGet("login")]
+        public string Authorize(string login, string password)
+        {
+            var user = _context.Users.FirstOrDefault(i => i.Login == login && i.Password == password);
+
+            if (user is null)
+                return "No user with id that login and password";
+
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.Authentication, user.Id.ToString()),
+                new(ClaimTypes.Role, user.RoleId switch { 0 => "admin", _ => "reader" })
+            };
+            var jwt = new JwtSecurityToken(
+                issuer: AuthOptions.ISSUER,
+                audience: AuthOptions.AUDIENCE,
+                claims: claims,
+                expires: DateTime.UtcNow.Add(TimeSpan.FromHours(6)), // время действия 6 часов
+                signingCredentials: new SigningCredentials(AuthOptions.GetSymmetricSecurityKey(),
+                    SecurityAlgorithms.HmacSha256));
+
+            return new JwtSecurityTokenHandler().WriteToken(jwt);
         }
     }
 }
