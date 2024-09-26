@@ -217,6 +217,10 @@ namespace LibApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("AccessHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("Balance")
                         .HasColumnType("decimal(18,2)");
 

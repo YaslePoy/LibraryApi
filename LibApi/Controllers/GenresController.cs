@@ -1,5 +1,6 @@
 ﻿using LibApi.DataBaseContext;
 using LibApi.Model;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LibApi.Controllers;
@@ -22,6 +23,7 @@ public class GenresController : Controller
     }
 
     [HttpPost]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> CreateGenre(string name)
     {
         var genre = _context.Genres.FirstOrDefault(i => i.Name == name);
@@ -40,6 +42,7 @@ public class GenresController : Controller
     }
 
     [HttpPatch]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult> EditGenre(int genreId, string newName)
     {
         var genre = _context.Genres.FirstOrDefault(i => i.Id == genreId);
@@ -53,6 +56,7 @@ public class GenresController : Controller
     }
 
     [HttpDelete("{genreId}")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult> DeleteGenre(int genreId)
     {
         var genre = _context.Genres.FirstOrDefault(i => i.Id == genreId);

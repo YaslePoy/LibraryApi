@@ -24,6 +24,7 @@ public class PaymentController : Controller
     }
 
     [HttpGet("replenishment")]
+    [Authorize]
     public ContentResult GetPaymentPage(int userId, decimal money)
     {
         var claims = new List<Claim>
@@ -82,6 +83,7 @@ public class PaymentController : Controller
     }
 
     [HttpGet("history/{userId}")]
+    [Authorize]
     public ActionResult GetHistoryByUser(int userId)
     {
         return Ok(_libApi.Transactions.Where(i => i.UserId == userId).ToList());

@@ -52,6 +52,7 @@ public class BooksController : Controller
     }
 
     [HttpPatch("{id:int}")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult> UpdateBook(int id, [FromBody] BookData request)
     {
         var book = _libApi.Books.FirstOrDefault(i => i.Id == id);
@@ -67,6 +68,7 @@ public class BooksController : Controller
     }
 
     [HttpDelete("{bookId}")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult> DeleteBook(int bookId)
     {
         var book = _libApi.Books.FirstOrDefault(i => i.Id == bookId);
@@ -80,6 +82,7 @@ public class BooksController : Controller
     }
 
     [HttpPost("{bookId}/release")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult> RegisterCopy(int bookId, decimal cost)
     {
         var copy = new BookCopy { BookId = bookId, Cost = cost, PurchaseDate = DateTime.Now };
@@ -102,6 +105,7 @@ public class BooksController : Controller
     }
 
     [HttpPost("{bookId}/genre/{genreId}")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult> AddGenreToBook(int bookId, int genreId)
     {
         var book = _libApi.Books.FirstOrDefault(i => i.Id == bookId);

@@ -1,6 +1,7 @@
 ﻿using LibApi.DataBaseContext;
 using LibApi.Model;
 using LibApi.Requests;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +20,7 @@ public class RentController : Controller
     }
 
     [HttpPost("take")]
+    [Authorize]
     public async Task<ActionResult> TakeInRent(RentResigter command)
     {
         var user = _libApi.Users.FirstOrDefault(i => i.Id == command.UserId);
@@ -70,6 +72,7 @@ public class RentController : Controller
     }
 
     [HttpPost("{rentId}/return")]
+    [Authorize]
     public async Task<ActionResult> ReturnBook(int rentId)
     {
         var rent = _libApi.BookRentals.Include(i => i.BookCopy).FirstOrDefault(i => i.Id == rentId);
@@ -86,6 +89,7 @@ public class RentController : Controller
     }
 
     [HttpGet("history/user/{userId}")]
+    [Authorize]
     public ActionResult GetHistoryByUser(int userId)
     {
         var user = _libApi.Users.FirstOrDefault(i => i.Id == userId);
@@ -97,6 +101,7 @@ public class RentController : Controller
     }
 
     [HttpGet("history/book/{copyId}")]
+    [Authorize]
     public ActionResult GetHistoryByBook(int copyId)
     {
         var copy = _libApi.BookCopies.FirstOrDefault(i => i.Id == copyId);
@@ -108,6 +113,7 @@ public class RentController : Controller
     }
 
     [HttpGet("current")]
+    [Authorize(Roles = "admin")]
     public ActionResult GetCurrentStatuses()
     {
         return Ok(_libApi.BookRentals.Where(i => i.IsReturned == false).Include(i => i.BookCopy)
@@ -115,6 +121,7 @@ public class RentController : Controller
     }
 
     [HttpPost("{rentId}/loss")]
+    [Authorize]
     public async Task<ActionResult> BookCopyLoss(int rentId)
     {
         var rent = _libApi.BookRentals.Include(i => i.BookCopy)
