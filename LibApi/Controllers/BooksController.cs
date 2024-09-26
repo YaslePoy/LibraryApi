@@ -35,7 +35,7 @@ public class BooksController : Controller
         return Ok(Utils.TransferData<BookData, Book>(book));
     }
 
-    [Authorize]
+    [Authorize(Roles = "admin")]
     [HttpPost]
     public async Task<ActionResult> CreateBook([FromBody] BookData data)
     {

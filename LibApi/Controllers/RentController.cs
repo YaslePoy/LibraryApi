@@ -32,12 +32,35 @@ public class RentController : Controller
         if (book.UserId is not null)
             return BadRequest("That book is already in rent");
 
-        var rent = new BookRental
+        var tariff = _libApi.Tariffs.FirstOrDefault(i => i.IsActive);
+
+        var transaction = new Transaction
         {
             UserId = command.UserId,
+            Movement = -(tariff.PaymentPerDay * (decimal)((command.Until - DateTime.Now).TotalHours / 24)),
+            TransactionTime = DateTime.Now
+        };
+
+        user.Balance += transaction.Movement;
+
+        var currentRents = _libApi.BookRentals.Include(i => i.BookCopy)
+            .Where(i => i.IsReturned == false && i.Payment.UserId == user.Id).ToList();
+
+        var totalDeposit = currentRents.Sum(i => i.BookCopy.Cost);
+
+        if (user.Balance - totalDeposit - book.Cost < 0)
+            return BadRequest("Need money for deposit and rent");
+
+        await _libApi.Transactions.AddAsync(transaction);
+        await _libApi.SaveChangesAsync();
+
+        var rent = new BookRental
+        {
+            TariffId = tariff.Id,
             BookCopyId = command.BookCopyId,
             RentStart = DateTime.Now,
-            RentEnd = command.Until
+            RentEnd = command.Until,
+            PaymentId = transaction.Id
         };
 
         book.UserId = command.UserId;
@@ -69,7 +92,7 @@ public class RentController : Controller
         if (user is null)
             return NotFound($"No user with id {userId}");
 
-        return Ok(_libApi.BookRentals.Where(i => i.UserId == userId).ToList()
+        return Ok(_libApi.BookRentals.Where(i => i.Payment.UserId == userId).ToList()
             .Select(Utils.TransferData<RentHistoryForUser, BookRental>).ToList());
     }
 
@@ -89,5 +112,30 @@ public class RentController : Controller
     {
         return Ok(_libApi.BookRentals.Where(i => i.IsReturned == false).Include(i => i.BookCopy)
             .Include(i => i.BookCopy.Book).ToList());
+    }
+
+    [HttpPost("{rentId}/loss")]
+    public async Task<ActionResult> BookCopyLoss(int rentId)
+    {
+        var rent = _libApi.BookRentals.Include(i => i.BookCopy)
+            .Include(bookRental => bookRental.Payment.User).FirstOrDefault(i => i.Id == rentId);
+        if (rent is null)
+            return NotFound("No rent with that Id");
+
+        if (rent.IsReturned)
+            return BadRequest("This book is returned yet");
+
+        rent.BookCopy.IsLost = true;
+        rent.Payment.User.Balance -= rent.BookCopy.Cost;
+        var transaction = new Transaction
+        {
+            UserId = rent.Payment.UserId,
+            Movement = -rent.BookCopy.Cost,
+            TransactionTime = DateTime.Now
+        };
+
+        await _libApi.Transactions.AddAsync(transaction);
+        await _libApi.SaveChangesAsync();
+        return Ok();
     }
 }

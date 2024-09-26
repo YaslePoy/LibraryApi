@@ -7,7 +7,6 @@ namespace LibApi.DataBaseContext
     {
         public LibApiContext(DbContextOptions options) : base(options)
         {
-
         }
 
         public DbSet<User> Users { get; set; }
@@ -16,5 +15,7 @@ namespace LibApi.DataBaseContext
         public DbSet<BookRental> BookRentals { get; set; }
         public DbSet<Genre> Genres { get; set; }
         public DbSet<BooksGenre> BooksGenres { get; set; }
+        public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<Tariff> Tariffs { get; set; }
     }
 }

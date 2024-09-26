@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Пополнение баланса</title>
+    <style>
+        body {
+            background: #FBB231;
+        }
+
+        .flip-container {
+            -webkit-perspective: 1000;
+            -moz-perspective: 1000;
+            -ms-perspective: 1000;
+            perspective: 1000;
+
+            -ms-transform: perspective(1000px);
+            -moz-transform: perspective(1000px);
+            -moz-transform-style: preserve-3d;
+            -ms-transform-style: preserve-3d;
+        }
+
+
+        /* START: Accommodating for IE */
+
+        .flip-container.hover .back {
+            -webkit-transform: rotateY(0deg);
+            -moz-transform: rotateY(0deg);
+            -o-transform: rotateY(0deg);
+            -ms-transform: rotateY(0deg);
+            transform: rotateY(0deg);
+        }
+
+        .flip-container.hover .front {
+            -webkit-transform: rotateY(180deg);
+            -moz-transform: rotateY(180deg);
+            -o-transform: rotateY(180deg);
+            transform: rotateY(180deg);
+        }
+
+        /* END: Accommodating for IE */
+
+        .flip-container,
+        .front,
+        .back {
+            width: 435px;
+            height: 258px;
+            margin: 25px auto;
+        }
+
+        /* flip speed goes here */
+        .flipper {
+            -webkit-transition: 0.6s;
+            -webkit-transform-style: preserve-3d;
+            -ms-transition: 0.6s;
+
+            -moz-transition: 0.6s;
+            -moz-transform: perspective(1000px);
+            -moz-transform-style: preserve-3d;
+            -ms-transform-style: preserve-3d;
+
+            transition: 0.6s;
+            transform-style: preserve-3d;
+
+            position: relative;
+        }
+
+        /* hide back of pane during swap */
+        .front,
+        .back {
+            border: 1px solid #E3E3E3;
+            -webkit-backface-visibility: hidden;
+            -moz-backface-visibility: hidden;
+            -ms-backface-visibility: hidden;
+            backface-visibility: hidden;
+
+            -webkit-transition: 0.6s;
+            -webkit-transform-style: preserve-3d;
+            -webkit-transform: rotateY(0deg);
+
+            -moz-transition: 0.6s;
+            -moz-transform-style: preserve-3d;
+            -moz-transform: rotateY(0deg);
+
+            -o-transition: 0.6s;
+            -o-transform-style: preserve-3d;
+            -o-transform: rotateY(0deg);
+
+            -ms-transition: 0.6s;
+            -ms-transform-style: preserve-3d;
+            -ms-transform: rotateY(0deg);
+
+            transition: 0.6s;
+            transform-style: preserve-3d;
+            transform: rotateY(0deg);
+
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+
+        .front {
+            -webkit-transform: rotateY(0deg);
+            -ms-transform: rotateY(0deg);
+
+            z-index: 2;
+        }
+
+        /* back, initially hidden pane */
+        .back {
+            -webkit-transform: rotateY(-180deg);
+            -moz-transform: rotateY(-180deg);
+            -o-transform: rotateY(-180deg);
+            -ms-transform: rotateY(-180deg);
+            transform: rotateY(-180deg);
+        }
+
+        /* card styles goes here */
+
+        .card {
+            background: linear-gradient(rgba(255, 255, 255, 1) 25%, rgba(255, 255, 255, 0.2)), #ddd;
+            border-radius: 4px;
+            -webkit-box-shadow: 0 2px 10px rgba(51, 51, 51, 0.2);
+            -moz-box-shadow: 0 2px 10px rgba(51, 51, 51, 0.2);
+            box-shadow: 0 2px 10px rgba(51, 51, 51, 0.2);
+            box-sizing: border-box;
+            font-family: 'Source Sans Pro', sans-serif;
+            padding: 10px;
+        }
+
+        .card.back {
+            text-align: right;
+        }
+
+        .card-provider {
+            text-align: right;
+            min-height: 40px;
+            /* to remove image loading div resize */
+        }
+
+        .card-provider .c-image {
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 18px;
+        }
+
+        .input-title,
+        .disclaimer {
+            color: #737373;
+            font-weight: 400;
+            font-size: 15px;
+            display: block;
+        }
+
+        .input-field {
+            display: block;
+            padding: 13px 10px;
+            border: 1px solid #D9D9D9;
+            border-radius: 4px;
+            margin: 10px 0 15px;
+            font-size: 16px;
+            box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.25);
+        }
+
+        .input-field.options {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        .input-field.cvv-code {
+            width: 100px;
+        }
+
+        .input-field:focus {
+            outline: 0;
+        }
+
+        .input-field::-webkit-input-placeholder {
+            color: #BBBBBB;
+        }
+
+        .input-field:-moz-placeholder {
+            /* Firefox 18- */
+            color: #BBBBBB;
+        }
+
+        .input-field::-moz-placeholder {
+            /* Firefox 19+ */
+            color: #BBBBBB;
+        }
+
+        .input-field:-ms-input-placeholder {
+            color: #BBBBBB;
+        }
+
+        .card-number,
+        .cardholder-name {
+            width: 219px;
+        }
+
+        .cardholder-name-wrap {
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 20px;
+        }
+
+        /* fix for firefox */
+
+        @-moz-document url-prefix() {
+            .cardholder-name-wrap {
+                margin-right: 10px;
+            }
+        }
+
+
+        .card-expiry-wrap {
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .custom-dropdown {
+            position: relative;
+            display: inline-block;
+            margin-right: 6px;
+        }
+
+        .custom-dropdown .options {
+            padding-right: 33px;
+        }
+
+        .custom-dropdown .select-icon {
+            position: absolute;
+            width: 12px;
+            top: 24px;
+            right: 13px;
+        }
+
+        .black-stripe {
+            height: 50px;
+            background: #333;
+            margin: 30px -11px 20px;
+        }
+
+        .cvv-wrap {
+            display: inline-block;
+            text-align: left;
+            margin-bottom: 6px;
+        }
+
+        .disclaimer {
+            text-align: left;
+        }
+
+
+        /* navigation buttons styles */
+
+
+        .buttons {
+            text-align: center;
+            padding-top: 20px;
+        }
+
+        .buttons button {
+            cursor: pointer;
+        }
+
+        .buttons button:focus {
+            outline: 0;
+        }
+
+        .buttons button:disabled {
+            cursor: not-allowed;
+        }
+
+        .next,
+        .pay,
+        .prev {
+            padding: 10px 20px;
+            border: 0;
+            background: #fff;
+            border-radius: 3px;
+            margin: 0 5px;
+            font-size: 15px;
+        }
+    </style>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+<div class="flip-container" id="flip-toggle">
+    <div class="flipper">
+        <div class="card front">
+
+            <div class="card-provider">
+                <div class="visa c-image">
+                    <img src="https://i.imgur.com/NN9t7UH.png" alt="visa">
+                </div>
+
+                <div class="mastercard c-image">
+                    <img src="https://i.imgur.com/bma7TBS.png" alt="mastercard">
+                </div>
+            </div>
+
+            <div class="card-number-wrap">
+                <label class="input-title" for="c-number">
+                    Номер карты*
+                </label>
+                <input type="text" name="c-number" id="c-number" class="input-field card-number"
+                       placeholder="XXXX XXXX XXXX XXXX" maxlength="16" required>
+            </div>
+
+            <div class="cardholder-name-wrap">
+                <label for="c-name" class="input-title cardholder-name">
+                    Имя держателя карты*
+                </label>
+                <input type="text" name="c-number" id="c-name" class="input-field cardholder-name"
+                       placeholder="Иванов иван" required>
+            </div>
+
+            <div class="card-expiry-wrap">
+
+                <label class="input-title">Действительно до*</label>
+                <div class="custom-dropdown">
+                    <select name="month" class="input-field options">
+                        <option>01</option>
+                        <option>02</option>
+                        <option>03</option>
+                        <option>04</option>
+                        <option>05</option>
+                        <option>06</option>
+                        <option>07</option>
+                        <option>08</option>
+                        <option>09</option>
+                        <option>10</option>
+                        <option>11</option>
+                        <option>12</option>
+                    </select>
+                    <img src="https://w7.pngwing.com/pngs/175/947/png-transparent-arrow-computer-icons-down-arrow-angle-black-desktop-wallpaper-thumbnail.png"
+                         alt="dropdown icon" class="select-icon">
+                </div>
+
+                <div class="custom-dropdown">
+                    <select name="year" class="input-field options">
+                        <option>01</option>
+                        <option>02</option>
+                        <option>03</option>
+                        <option>04</option>
+                        <option>05</option>
+                        <option>06</option>
+                        <option>07</option>
+                        <option>08</option>
+                        <option>09</option>
+                        <option>10</option>
+                        <option>11</option>
+                        <option>12</option>
+                        <option>13</option>
+                        <option>14</option>
+                        <option>15</option>
+                        <option>16</option>
+                        <option>17</option>
+                        <option>18</option>
+                        <option>19</option>
+                        <option>20</option>
+                        <option>21</option>
+                        <option>22</option>
+                        <option>23</option>
+                        <option>24</option>
+                        <option>25</option>
+                        <option>26</option>
+                        <option>27</option>
+                        <option>28</option>
+                        <option>29</option>
+                        <option>30</option>
+                    </select>
+                    <img src="https://w7.pngwing.com/pngs/175/947/png-transparent-arrow-computer-icons-down-arrow-angle-black-desktop-wallpaper-thumbnail.png"
+                         alt="dropdown icon" class="select-icon">
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="card back">
+            <!-- back content -->
+            <div class="black-stripe"></div>
+            <div class="cvv-wrap">
+                <label for="cvv-code" class="input-title">CVV код*</label>
+                <input type="text" class="input-field cvv-code" id="cvv-code" placeholder="000" maxlength="3"
+                       required>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="buttons">
+    <button class="prev" disabled="disabled">Передняя</button>
+    <button class="next">Задняя</button>
+    <button class="pay" disabled="disabled">Оплатить ₽</button>
+</div>
+
+<script>
+    /* fix to enable click to show dropdown on custom icon */
+
+    $(document).on('click', '.select-icon', function () {
+        var selectId = $(this).siblings('.options');
+        open(selectId);
+    });
+
+
+    function open(elem) {
+        if (document.createEvent) {
+            var e = document.createEvent("MouseEvents");
+            e.initMouseEvent("mousedown", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+            elem[0].dispatchEvent(e);
+        } else if (element.fireEvent) {
+            elem[0].fireEvent("onmousedown");
+        }
+    }
+
+    /* next view button */
+    $('.next').on('click', function () {
+
+        $('#flip-toggle').addClass('hover');
+        $(this).attr('disabled', true);
+        $('.prev').removeAttr('disabled');
+        $('.pay').removeAttr('disabled');
+    });
+
+
+    /* prev view button */
+    $('.prev').on('click', function () {
+
+        $('#flip-toggle').removeClass('hover');
+        $(this).attr('disabled', true);
+        $('.pay').attr('disabled', true);
+        $('.next').removeAttr('disabled');
+
+    });
+
+    $('.pay').on('click', function () {
+
+        const jwtoken = ''
+        const link = ''
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", link, true);
+        xhr.setRequestHeader('Authorization', 'Bearer ' + jwtoken);
+        xhr.onload = function () {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                alert('Оплата прошла успешно');
+                close();
+            } else {
+                alert("что то пошло не так")
+            }
+        };
+
+        xhr.send();
+    });
+</script>
+</body>
+
+</html>

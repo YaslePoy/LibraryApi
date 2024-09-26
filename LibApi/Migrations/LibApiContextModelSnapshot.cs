@@ -4,7 +4,6 @@ using LibApi.DataBaseContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -12,11 +11,9 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LibApi.Migrations
 {
     [DbContext(typeof(LibApiContext))]
-    [Migration("20240924173330_to datetime")]
-    partial class todatetime
+    partial class LibApiContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -67,6 +64,9 @@ namespace LibApi.Migrations
                     b.Property<decimal>("Cost")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<bool>("IsLost")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("PurchaseDate")
                         .HasColumnType("datetime2");
 
@@ -93,20 +93,28 @@ namespace LibApi.Migrations
                     b.Property<int>("BookCopyId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsReturned")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("PaymentId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("RentEnd")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("RentStart")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("UserId")
+                    b.Property<int>("TariffId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("BookCopyId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("PaymentId");
+
+                    b.HasIndex("TariffId");
 
                     b.ToTable("BookRentals");
                 });
@@ -151,6 +159,52 @@ namespace LibApi.Migrations
                     b.ToTable("Genres");
                 });
 
+            modelBuilder.Entity("LibApi.Model.Tariff", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("PaymentPerDay")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("TariffStart")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Tariffs");
+                });
+
+            modelBuilder.Entity("LibApi.Model.Transaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Movement")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("TransactionTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Transactions");
+                });
+
             modelBuilder.Entity("LibApi.Model.User", b =>
                 {
                     b.Property<int>("Id")
@@ -162,6 +216,9 @@ namespace LibApi.Migrations
                     b.Property<string>("About")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Balance")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("BirthDate")
                         .HasColumnType("datetime2");
@@ -181,6 +238,9 @@ namespace LibApi.Migrations
                     b.Property<string>("Phone")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Surname")
                         .IsRequired()
@@ -216,13 +276,23 @@ namespace LibApi.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("LibApi.Model.User", "User")
+                    b.HasOne("LibApi.Model.Transaction", "Payment")
                         .WithMany()
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LibApi.Model.Tariff", "Tariff")
+                        .WithMany()
+                        .HasForeignKey("TariffId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("BookCopy");
 
-                    b.Navigation("User");
+                    b.Navigation("Payment");
+
+                    b.Navigation("Tariff");
                 });
 
             modelBuilder.Entity("LibApi.Model.BooksGenre", b =>
@@ -242,6 +312,17 @@ namespace LibApi.Migrations
                     b.Navigation("Book");
 
                     b.Navigation("Genre");
+                });
+
+            modelBuilder.Entity("LibApi.Model.Transaction", b =>
+                {
+                    b.HasOne("LibApi.Model.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }
