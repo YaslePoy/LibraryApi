@@ -52,6 +52,21 @@ namespace LibApi.Controllers
         [HttpPost("register")]
         public async Task<ActionResult> RegisterUser(CreateNewUser request)
         {
+            if (string.IsNullOrWhiteSpace(request.Name))
+                return BadRequest("Unexpected name");
+
+            if (string.IsNullOrWhiteSpace(request.Login))
+                return BadRequest("Unexpected loign");
+
+            if (string.IsNullOrWhiteSpace(request.Password))
+                return BadRequest("Unexpected password");
+
+            if (string.IsNullOrWhiteSpace(request.Surname))
+                return BadRequest("Unexpected surname");
+
+            if (string.IsNullOrWhiteSpace(request.Phone))
+                return BadRequest("Unexpected phone");
+
             var isUserExists = _context.Users.Any(i => i.Login == request.Login);
 
             if (isUserExists)
@@ -91,6 +106,15 @@ namespace LibApi.Controllers
         [Authorize]
         public async Task<ActionResult> UpdateUser([FromBody] UpdateUserRequest request)
         {
+            if (string.IsNullOrWhiteSpace(request.Name))
+                return BadRequest("Unexpected name");
+
+            if (string.IsNullOrWhiteSpace(request.Surname))
+                return BadRequest("Unexpected surname");
+
+            if (string.IsNullOrWhiteSpace(request.Phone))
+                return BadRequest("Unexpected phone");
+
             if (ChechFromJWT(ClaimTypes.Authentication, request.Id.ToString()) &&
                 ChechFromJWT(ClaimTypes.Role, "admin"))
                 return Unauthorized("User can update profile only for his account");
@@ -113,7 +137,7 @@ namespace LibApi.Controllers
             if (ChechFromJWT(ClaimTypes.Authentication, userId.ToString()) &&
                 ChechFromJWT(ClaimTypes.Role, "admin"))
                 return Unauthorized("User can delete profile only for his account");
-            
+
             var user = _context.Users.FirstOrDefault(i => i.Id == userId);
 
             if (user is null)
@@ -128,7 +152,6 @@ namespace LibApi.Controllers
         [Authorize]
         public async Task<ActionResult> GetBooksOfUser(int userId)
         {
-            
             if (ChechFromJWT(ClaimTypes.Authentication, userId.ToString()) &&
                 ChechFromJWT(ClaimTypes.Role, "admin"))
                 return Unauthorized("User can see books only for his account");

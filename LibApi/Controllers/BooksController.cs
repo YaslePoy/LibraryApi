@@ -1,7 +1,6 @@
 ﻿using LibApi.DataBaseContext;
 using LibApi.Model;
 using LibApi.Requests;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -20,13 +19,13 @@ public class BooksController : Controller
     }
 
     [HttpGet("all")]
-    public ActionResult GetAllBooks()
+    public ActionResult<IReadOnlyList<Book>> GetAllBooks()
     {
         return Ok(_libApi.Books.ToList());
     }
 
     [HttpGet("{bookId:int}")]
-    public ActionResult GetBook(int bookId)
+    public ActionResult<BookData> GetBook(int bookId)
     {
         var book = _libApi.Books.FirstOrDefault(i => i.Id == bookId);
         if (book is null)
@@ -39,6 +38,12 @@ public class BooksController : Controller
     [HttpPost]
     public async Task<ActionResult> CreateBook([FromBody] BookData data)
     {
+        if (string.IsNullOrWhiteSpace(data.Author))
+            return BadRequest("Unexpected author");
+
+        if (string.IsNullOrWhiteSpace(data.Name))
+            return BadRequest("Unexpected book name");
+
         var book = _libApi.Books.FirstOrDefault(i =>
             i.Name == data.Name && i.Author == data.Author && i.PublicationDate == data.PublicationDate);
         if (book is not null)
@@ -55,6 +60,12 @@ public class BooksController : Controller
     [Authorize(Roles = "admin")]
     public async Task<ActionResult> UpdateBook(int id, [FromBody] BookData request)
     {
+        if (string.IsNullOrWhiteSpace(request.Author))
+            return BadRequest("Unexpected author");
+
+        if (string.IsNullOrWhiteSpace(request.Name))
+            return BadRequest("Unexpected book name");
+
         var book = _libApi.Books.FirstOrDefault(i => i.Id == id);
 
         if (book is null)
@@ -127,7 +138,7 @@ public class BooksController : Controller
     }
 
     [HttpGet("genre/{genreId}")]
-    public ActionResult GetBooksByGenre(int genreId)
+    public ActionResult<Book> GetBooksByGenre(int genreId)
     {
         var genre = _libApi.Genres.FirstOrDefault(i => i.Id == genreId);
         if (genre is null)
@@ -137,27 +148,27 @@ public class BooksController : Controller
     }
 
     [HttpGet("author")]
-    public ActionResult GetBooksByAuthor(string author)
+    public ActionResult<IReadOnlyList<Book>> GetBooksByAuthor(string author)
     {
         return Ok(_libApi.Books.ToList().Where(i => Utils.LevenshteinDistance(i.Author, author) <= 2)
             .Select(Utils.TransferData<BookData, Book>));
     }
 
     [HttpGet("name")]
-    public ActionResult GetBooksByName(string name)
+    public ActionResult<IReadOnlyList<Book>> GetBooksByName(string name)
     {
         return Ok(_libApi.Books.ToList().Where(i => Utils.LevenshteinDistance(i.Name, name) <= 2)
             .Select(Utils.TransferData<BookData, Book>));
     }
 
     [HttpGet("copies")]
-    public ActionResult GetAllCopies()
+    public ActionResult<IReadOnlyList<BookCopy>> GetAllCopies()
     {
         return Ok(_libApi.BookCopies.Include(i => i.Book).ToList());
     }
 
     [HttpGet("copies/{copyId}")]
-    public ActionResult GetCopy(int copyId)
+    public ActionResult<BookCopy> GetCopy(int copyId)
     {
         return Ok(_libApi.BookCopies.Include(i => i.Book).FirstOrDefault(i => i.Id == copyId));
     }

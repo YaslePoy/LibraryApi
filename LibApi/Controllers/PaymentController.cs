@@ -24,12 +24,8 @@ public class PaymentController : CheckController
     }
 
     [HttpGet("replenishment")]
-    [Authorize]
     public ContentResult GetPaymentPage(int userId, decimal money)
     {
-        if (ChechFromJWT(ClaimTypes.Authentication, userId.ToString()) &&
-            ChechFromJWT(ClaimTypes.Role, "admin"))
-            return Content("User can pay only for his account");
         var claims = new List<Claim>
         {
             new(ClaimTypes.Authentication, userId.ToString()),

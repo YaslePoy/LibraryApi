@@ -7,4 +7,5 @@ public class GetUserResponse
     public DateTime BirthDate { get; set; }
     public string About { get; set; }
     public string Phone { get; set; }
+    public decimal Balance { get; set; }
 }

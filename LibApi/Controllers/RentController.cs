@@ -21,7 +21,7 @@ public class RentController : CheckController
 
     [HttpPost("take")]
     [Authorize]
-    public async Task<ActionResult> TakeInRent(RentResigter command)
+    public async Task<ActionResult> TakeInRent(RentRegister command)
     {
         if (ChechFromJWT(ClaimTypes.Authentication, command.UserId.ToString()) &&
             ChechFromJWT(ClaimTypes.Role, "admin"))
@@ -113,7 +113,6 @@ public class RentController : CheckController
     [Authorize(Roles = "admin")]
     public ActionResult GetHistoryByBook(int copyId)
     {
-
         var copy = _libApi.BookCopies.FirstOrDefault(i => i.Id == copyId);
         if (copy is null)
             return NotFound($"No book copy with id {copyId}");
@@ -134,7 +133,6 @@ public class RentController : CheckController
     [Authorize]
     public async Task<ActionResult> BookCopyLoss(int rentId)
     {
-        
         var rent = _libApi.BookRentals.Include(i => i.BookCopy)
             .Include(bookRental => bookRental.Payment.User).FirstOrDefault(i => i.Id == rentId);
         if (rent is null)
@@ -146,7 +144,7 @@ public class RentController : CheckController
         if (ChechFromJWT(ClaimTypes.Authentication, rent.Payment.UserId.ToString()) &&
             ChechFromJWT(ClaimTypes.Role, "admin"))
             return Unauthorized("User can see history only for his account");
-        
+
         rent.BookCopy.IsLost = true;
         rent.Payment.User.Balance -= rent.BookCopy.Cost;
         var transaction = new Transaction

@@ -8,4 +8,5 @@ public class RentHistoryForUser
     public int BookCopyId { get; set; }
     public DateTime RentStart { get; set; }
     public DateTime RentEnd { get; set; }
+    public bool IsReturned { get; set; }
 }

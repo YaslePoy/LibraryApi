@@ -26,6 +26,9 @@ public class GenresController : Controller
     [Authorize(Roles = "admin")]
     public async Task<IActionResult> CreateGenre(string name)
     {
+        if (string.IsNullOrWhiteSpace(name))
+            return BadRequest("Unexpected genre name");
+
         var genre = _context.Genres.FirstOrDefault(i => i.Name == name);
         if (genre != null)
             return BadRequest("That genre already created");
@@ -45,6 +48,9 @@ public class GenresController : Controller
     [Authorize(Roles = "admin")]
     public async Task<ActionResult> EditGenre(int genreId, string newName)
     {
+        if (string.IsNullOrWhiteSpace(newName))
+            return BadRequest("Unexpected genre name");
+
         var genre = _context.Genres.FirstOrDefault(i => i.Id == genreId);
         if (genre is null)
             return NotFound("That genre does not exists");

@@ -1,6 +1,6 @@
 ﻿namespace LibApi.Requests;
 
-public class RentResigter
+public class RentRegister
 {
     public int UserId { get; set; }
     public int BookCopyId { get; set; }
