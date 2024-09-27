@@ -10,7 +10,7 @@ namespace LibApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class PaymentController : Controller
+public class PaymentController : CheckController
 {
     public static readonly string PaymentPage = System.IO.File.ReadAllText("payment.html");
 
@@ -27,6 +27,9 @@ public class PaymentController : Controller
     [Authorize]
     public ContentResult GetPaymentPage(int userId, decimal money)
     {
+        if (ChechFromJWT(ClaimTypes.Authentication, userId.ToString()) &&
+            ChechFromJWT(ClaimTypes.Role, "admin"))
+            return Content("User can pay only for his account");
         var claims = new List<Claim>
         {
             new(ClaimTypes.Authentication, userId.ToString()),
@@ -86,6 +89,9 @@ public class PaymentController : Controller
     [Authorize]
     public ActionResult GetHistoryByUser(int userId)
     {
+        if (ChechFromJWT(ClaimTypes.Authentication, userId.ToString()) &&
+            ChechFromJWT(ClaimTypes.Role, "admin"))
+            return Unauthorized("User can see history of trasactions only for his account");
         return Ok(_libApi.Transactions.Where(i => i.UserId == userId).ToList());
     }
 }

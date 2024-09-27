@@ -14,7 +14,7 @@ namespace LibApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class UsersController : Controller
+    public class UsersController : CheckController
     {
         private const string Salt = "$2a$11$ZErcI.wI08ojlsW9Qcikle";
         readonly LibApiContext _context;
@@ -91,6 +91,9 @@ namespace LibApi.Controllers
         [Authorize]
         public async Task<ActionResult> UpdateUser([FromBody] UpdateUserRequest request)
         {
+            if (ChechFromJWT(ClaimTypes.Authentication, request.Id.ToString()) &&
+                ChechFromJWT(ClaimTypes.Role, "admin"))
+                return Unauthorized("User can update profile only for his account");
             var user = _context.Users.FirstOrDefault(i => i.Id == request.Id);
 
             if (user is null)
@@ -107,6 +110,10 @@ namespace LibApi.Controllers
         [Authorize]
         public async Task<ActionResult> DeleteUser(int userId)
         {
+            if (ChechFromJWT(ClaimTypes.Authentication, userId.ToString()) &&
+                ChechFromJWT(ClaimTypes.Role, "admin"))
+                return Unauthorized("User can delete profile only for his account");
+            
             var user = _context.Users.FirstOrDefault(i => i.Id == userId);
 
             if (user is null)
@@ -121,6 +128,10 @@ namespace LibApi.Controllers
         [Authorize]
         public async Task<ActionResult> GetBooksOfUser(int userId)
         {
+            
+            if (ChechFromJWT(ClaimTypes.Authentication, userId.ToString()) &&
+                ChechFromJWT(ClaimTypes.Role, "admin"))
+                return Unauthorized("User can see books only for his account");
             var user = _context.Users.FirstOrDefault(i => i.Id == userId);
 
             if (user is null)

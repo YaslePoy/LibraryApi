@@ -1,8 +1,8 @@
-﻿using LibApi.DataBaseContext;
+﻿using System.Security.Claims;
+using LibApi.DataBaseContext;
 using LibApi.Model;
 using LibApi.Requests;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +10,7 @@ namespace LibApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class RentController : Controller
+public class RentController : CheckController
 {
     private readonly LibApiContext _libApi;
 
@@ -23,6 +23,9 @@ public class RentController : Controller
     [Authorize]
     public async Task<ActionResult> TakeInRent(RentResigter command)
     {
+        if (ChechFromJWT(ClaimTypes.Authentication, command.UserId.ToString()) &&
+            ChechFromJWT(ClaimTypes.Role, "admin"))
+            return Unauthorized("User can take rent only for his account");
         var user = _libApi.Users.FirstOrDefault(i => i.Id == command.UserId);
         if (user is null)
             return NotFound($"No user with id {command.UserId}");
@@ -79,6 +82,9 @@ public class RentController : Controller
         if (rent is null)
             return NotFound($"No rent with id {rentId}");
 
+        if (ChechFromJWT(ClaimTypes.Authentication, rent.Payment.UserId.ToString()) &&
+            ChechFromJWT(ClaimTypes.Role, "admin"))
+            return Unauthorized("User can return copy only for his account");
         rent.IsReturned = true;
         rent.BookCopy.UserId = null;
         rent.BookCopy.User = null;
@@ -92,6 +98,9 @@ public class RentController : Controller
     [Authorize]
     public ActionResult GetHistoryByUser(int userId)
     {
+        if (ChechFromJWT(ClaimTypes.Authentication, userId.ToString()) &&
+            ChechFromJWT(ClaimTypes.Role, "admin"))
+            return Unauthorized("User can see history only for his account");
         var user = _libApi.Users.FirstOrDefault(i => i.Id == userId);
         if (user is null)
             return NotFound($"No user with id {userId}");
@@ -101,9 +110,10 @@ public class RentController : Controller
     }
 
     [HttpGet("history/book/{copyId}")]
-    [Authorize]
+    [Authorize(Roles = "admin")]
     public ActionResult GetHistoryByBook(int copyId)
     {
+
         var copy = _libApi.BookCopies.FirstOrDefault(i => i.Id == copyId);
         if (copy is null)
             return NotFound($"No book copy with id {copyId}");
@@ -124,6 +134,7 @@ public class RentController : Controller
     [Authorize]
     public async Task<ActionResult> BookCopyLoss(int rentId)
     {
+        
         var rent = _libApi.BookRentals.Include(i => i.BookCopy)
             .Include(bookRental => bookRental.Payment.User).FirstOrDefault(i => i.Id == rentId);
         if (rent is null)
@@ -132,6 +143,10 @@ public class RentController : Controller
         if (rent.IsReturned)
             return BadRequest("This book is returned yet");
 
+        if (ChechFromJWT(ClaimTypes.Authentication, rent.Payment.UserId.ToString()) &&
+            ChechFromJWT(ClaimTypes.Role, "admin"))
+            return Unauthorized("User can see history only for his account");
+        
         rent.BookCopy.IsLost = true;
         rent.Payment.User.Balance -= rent.BookCopy.Cost;
         var transaction = new Transaction
