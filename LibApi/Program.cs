@@ -1,6 +1,11 @@
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using LibApi.DataBaseContext;
+using LibApi.Services;
+using LibApi.Services.BookService;
+using LibApi.Services.GenreService;
+using LibApi.Services.RentService;
+using LibApi.Services.UserService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
@@ -47,6 +52,12 @@ builder.Services.AddCors(options =>
             .SetIsOriginAllowed((host) => true)
             .AllowAnyHeader());
 });
+
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IBookService, BookService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IRentService, RentService>();
+builder.Services.AddScoped<IGenreService, GenreService>();
 builder.Services.AddDbContext<LibApiContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DBConnection")), ServiceLifetime.Scoped);
 

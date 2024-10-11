@@ -1,9 +1,9 @@
-﻿using LibApi.DataBaseContext;
-using LibApi.Model;
+﻿using LibApi.Model;
 using LibApi.Requests;
+using LibApi.Services.BookService;
+using LibApi.Services.GenreService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace LibApi.Controllers;
 
@@ -11,27 +11,28 @@ namespace LibApi.Controllers;
 [Route("api/[controller]")]
 public class BooksController : Controller
 {
-    private readonly LibApiContext _libApi;
+    private readonly IBookService _book;
+    private readonly IGenreService _genre;
 
-    public BooksController(LibApiContext libApi)
+    public BooksController(IBookService book, IGenreService genre)
     {
-        _libApi = libApi;
+        _book = book;
+        _genre = genre;
     }
 
     [HttpGet("all")]
     public ActionResult<IReadOnlyList<Book>> GetAllBooks()
     {
-        return Ok(_libApi.Books.ToList());
+        return Ok(_book.GetAll());
     }
 
     [HttpGet("{bookId:int}")]
     public ActionResult<BookData> GetBook(int bookId)
     {
-        var book = _libApi.Books.FirstOrDefault(i => i.Id == bookId);
-        if (book is null)
+        if (!_book.IsExists(bookId))
             return NotFound("No book with that Id");
 
-        return Ok(Utils.TransferData<BookData, Book>(book));
+        return Ok(Utils.TransferData<BookData, Book>(_book.Get(bookId)));
     }
 
     [Authorize(Roles = "admin")]
@@ -44,16 +45,12 @@ public class BooksController : Controller
         if (string.IsNullOrWhiteSpace(data.Name))
             return BadRequest("Unexpected book name");
 
-        var book = _libApi.Books.FirstOrDefault(i =>
+        var book = _book.GetAll().FirstOrDefault(i =>
             i.Name == data.Name && i.Author == data.Author && i.PublicationDate == data.PublicationDate);
         if (book is not null)
             return BadRequest("That book is registered");
 
-        book = Utils.TransferData<Book, BookData>(data);
-
-        await _libApi.Books.AddAsync(book);
-        await _libApi.SaveChangesAsync();
-        return Ok(book.Id);
+        return Ok(await _book.Create(data));
     }
 
     [HttpPatch("{id:int}")]
@@ -66,14 +63,11 @@ public class BooksController : Controller
         if (string.IsNullOrWhiteSpace(request.Name))
             return BadRequest("Unexpected book name");
 
-        var book = _libApi.Books.FirstOrDefault(i => i.Id == id);
 
-        if (book is null)
+        if (!_book.IsExists(id))
             return NotFound($"No book with id {id}");
 
-        Utils.TransferData(book, request);
-
-        await _libApi.SaveChangesAsync();
+        await _book.Update(id, request);
 
         return Ok();
     }
@@ -82,13 +76,10 @@ public class BooksController : Controller
     [Authorize(Roles = "admin")]
     public async Task<ActionResult> DeleteBook(int bookId)
     {
-        var book = _libApi.Books.FirstOrDefault(i => i.Id == bookId);
-
-        if (book is null)
+        if (!_book.IsExists(bookId))
             return NotFound($"No user with id {bookId}");
 
-        _libApi.Books.Remove(book);
-        await _libApi.SaveChangesAsync();
+        await _book.Delete(bookId);
         return Ok();
     }
 
@@ -96,80 +87,64 @@ public class BooksController : Controller
     [Authorize(Roles = "admin")]
     public async Task<ActionResult> RegisterCopy(int bookId, decimal cost)
     {
-        var copy = new BookCopy { BookId = bookId, Cost = cost, PurchaseDate = DateTime.Now };
-
-        await _libApi.BookCopies.AddAsync(copy);
-        await _libApi.SaveChangesAsync();
-
-        return Ok(new { copyId = copy.Id });
+        return Ok(new { copyId = await _book.Copy(bookId, cost) });
     }
 
     [HttpGet("{bookId}/count")]
     public ActionResult CountOfCopies(int bookId)
     {
-        var book = _libApi.Books.FirstOrDefault(i => i.Id == bookId);
+        if (!_book.IsExists(bookId))
 
-        if (book is null)
             return NotFound($"No book with id {bookId}");
 
-        return Ok(_libApi.BookCopies.Count(i => i.BookId == bookId));
+        return Ok(_book.CopyCount(bookId));
     }
 
     [HttpPost("{bookId}/genre/{genreId}")]
     [Authorize(Roles = "admin")]
     public async Task<ActionResult> AddGenreToBook(int bookId, int genreId)
     {
-        var book = _libApi.Books.FirstOrDefault(i => i.Id == bookId);
-        if (book is null)
+        if (!_book.IsExists(bookId))
             return NotFound($"No book with id {bookId}");
 
-        var genre = _libApi.Genres.FirstOrDefault(i => i.Id == genreId);
-        if (genre is null)
+        if (!_genre.IsExists(genreId))
             return NotFound($"No genre with id {genreId}");
 
-        var rent = new BooksGenre
-        {
-            BookId = bookId, GenreId = genreId
-        };
+        await _book.AddGenre(bookId, genreId);
 
-        await _libApi.BooksGenres.AddAsync(rent);
-        await _libApi.SaveChangesAsync();
         return Ok();
     }
 
     [HttpGet("genre/{genreId}")]
     public ActionResult<Book> GetBooksByGenre(int genreId)
     {
-        var genre = _libApi.Genres.FirstOrDefault(i => i.Id == genreId);
-        if (genre is null)
+        if (!_genre.IsExists(genreId))
             return NotFound($"No genre with id {genreId}");
 
-        return Ok(_libApi.BooksGenres.Where(i => i.GenreId == genreId).Include(i => i.Book).Select(i => i.Book));
+        return Ok(_book.BooksWithGenre(genreId));
     }
 
     [HttpGet("author")]
     public ActionResult<IReadOnlyList<Book>> GetBooksByAuthor(string author)
     {
-        return Ok(_libApi.Books.ToList().Where(i => Utils.LevenshteinDistance(i.Author, author) <= 2)
-            .Select(Utils.TransferData<BookData, Book>));
+        return Ok(_book.BooksWithAuthor(author).Select(Utils.TransferData<BookData, Book>));
     }
 
     [HttpGet("name")]
     public ActionResult<IReadOnlyList<Book>> GetBooksByName(string name)
     {
-        return Ok(_libApi.Books.ToList().Where(i => Utils.LevenshteinDistance(i.Name, name) <= 2)
-            .Select(Utils.TransferData<BookData, Book>));
+        return Ok(_book.BooksWithName(name).Select(Utils.TransferData<BookData, Book>));
     }
 
     [HttpGet("copies")]
     public ActionResult<IReadOnlyList<BookCopy>> GetAllCopies()
     {
-        return Ok(_libApi.BookCopies.Include(i => i.Book).ToList());
+        return Ok(_book.AllCopies());
     }
 
     [HttpGet("copies/{copyId}")]
     public ActionResult<BookCopy> GetCopy(int copyId)
     {
-        return Ok(_libApi.BookCopies.Include(i => i.Book).FirstOrDefault(i => i.Id == copyId));
+        return Ok(_book.GetCopy(copyId));
     }
 }

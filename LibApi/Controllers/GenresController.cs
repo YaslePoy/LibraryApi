@@ -1,5 +1,6 @@
 ﻿using LibApi.DataBaseContext;
 using LibApi.Model;
+using LibApi.Services.GenreService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,17 +10,18 @@ namespace LibApi.Controllers;
 [Route("api/[controller]")]
 public class GenresController : Controller
 {
-    private readonly LibApiContext _context;
+    // private readonly LibApiContext _context;
+    private readonly IGenreService _genre;
 
-    public GenresController(LibApiContext context)
+    public GenresController(IGenreService genre)
     {
-        _context = context;
+        _genre = genre;
     }
 
     [HttpGet("all")]
     public IActionResult GetAllGenres()
     {
-        return Ok(_context.Genres.ToList());
+        return Ok(_genre.GetAll());
     }
 
     [HttpPost]
@@ -29,19 +31,11 @@ public class GenresController : Controller
         if (string.IsNullOrWhiteSpace(name))
             return BadRequest("Unexpected genre name");
 
-        var genre = _context.Genres.FirstOrDefault(i => i.Name == name);
+        var genre = _genre.GetAll().FirstOrDefault(i => i.Name == name);
         if (genre != null)
             return BadRequest("That genre already created");
 
-        genre = new Genre
-        {
-            Name = name
-        };
-
-        await _context.Genres.AddAsync(genre);
-        await _context.SaveChangesAsync();
-
-        return Ok(new { genreId = genre.Id });
+        return Ok(new { genreId = await _genre.Create(name) });
     }
 
     [HttpPatch]
@@ -51,13 +45,11 @@ public class GenresController : Controller
         if (string.IsNullOrWhiteSpace(newName))
             return BadRequest("Unexpected genre name");
 
-        var genre = _context.Genres.FirstOrDefault(i => i.Id == genreId);
-        if (genre is null)
+        if (!_genre.IsExists(genreId))
             return NotFound("That genre does not exists");
 
-        genre.Name = newName;
+        _genre.Update(genreId, newName);
 
-        await _context.SaveChangesAsync();
         return Ok();
     }
 
@@ -65,12 +57,11 @@ public class GenresController : Controller
     [Authorize(Roles = "admin")]
     public async Task<ActionResult> DeleteGenre(int genreId)
     {
-        var genre = _context.Genres.FirstOrDefault(i => i.Id == genreId);
-        if (genre is null)
+        if (!_genre.IsExists(genreId))
             return NotFound("That genre does not exists");
 
-        _context.Remove(genre);
-        await _context.SaveChangesAsync();
+        await _genre.Delete(genreId);
+
         return Ok();
     }
 }
