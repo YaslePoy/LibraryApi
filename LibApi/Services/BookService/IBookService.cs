@@ -14,6 +14,8 @@ public interface IBookService : ICrudService<Book, BookData>
     IReadOnlyList<Book> BooksWithGenre(int genreId);
     IReadOnlyList<Book> BooksWithAuthor(string author);
     IReadOnlyList<Book> BooksWithName(string name);
+    IReadOnlyList<Book> BooksWithFilter(string? author, int? genre, int? year);
+    
     IReadOnlyList<BookCopy> AllCopies();
     BookCopy GetCopy(int copyId);
     bool IsCopyExists(int copyId);

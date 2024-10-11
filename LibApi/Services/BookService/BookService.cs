@@ -93,6 +93,12 @@ public class BookService : IBookService
         return _libApi.Books.ToList().Where(i => Utils.LevenshteinDistance(i.Name, name) <= 2).ToList();
     }
 
+    public IReadOnlyList<Book> BooksWithFilter(string? author, int? genre, int? year)
+    {
+        return _libApi.BooksGenres.Include(i => i.Book)
+            .Where(i => (genre == null || i.GenreId == genre) && (author == null || Utils.LevenshteinDistance(i.Book.Author, author) <= 2) && (year == null || i.Book.PublicationDate.Year == year)).ToList().Select(i => i.Book).ToList();
+    }
+
     public IReadOnlyList<BookCopy> AllCopies()
     {
         return _libApi.BookCopies.ToList();

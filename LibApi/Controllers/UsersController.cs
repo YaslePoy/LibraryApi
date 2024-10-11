@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LibApi.Model;
 using LibApi.Requests;
+using LibApi.Services.UserService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.IdentityModel.Tokens;
@@ -16,37 +17,21 @@ namespace LibApi.Controllers
     [Route("api/[controller]")]
     public class UsersController : CheckController
     {
-        private const string Salt = "$2a$11$ZErcI.wI08ojlsW9Qcikle";
-        readonly LibApiContext _context;
+        private readonly IUserService _user;
 
-        public UsersController(LibApiContext context)
+        public UsersController(IUserService user)
         {
-            _context = context;
+            _user = user;
         }
 
         [HttpGet("login")]
         public string Authorize(string login, string password)
         {
-            var passwordHash = BCrypt.Net.BCrypt.HashPassword(password, Salt);
-            var user = _context.Users.FirstOrDefault(i => i.Login == login && i.Password == passwordHash);
 
-            if (user is null)
+            if(!_user.IsLoginExists(login))
                 return "No user with id that login and password";
 
-            var claims = new List<Claim>
-            {
-                new(ClaimTypes.Authentication, user.Id.ToString()),
-                new(ClaimTypes.Role, user.RoleId switch { 0 => "admin", _ => "reader" })
-            };
-            var jwt = new JwtSecurityToken(
-                issuer: AuthOptions.ISSUER,
-                audience: AuthOptions.AUDIENCE,
-                claims: claims,
-                expires: DateTime.UtcNow.Add(TimeSpan.FromHours(6)), // время действия 6 часов
-                signingCredentials: new SigningCredentials(AuthOptions.GetSymmetricSecurityKey(),
-                    SecurityAlgorithms.HmacSha256));
-
-            return new JwtSecurityTokenHandler().WriteToken(jwt);
+            return _user.Authorize(login, password);
         }
 
         [HttpPost("register")]
@@ -67,19 +52,14 @@ namespace LibApi.Controllers
             if (string.IsNullOrWhiteSpace(request.Phone))
                 return BadRequest("Unexpected phone");
 
-            var isUserExists = _context.Users.Any(i => i.Login == request.Login);
 
-            if (isUserExists)
+            if (_user.IsLoginExists(request.Login))
                 return BadRequest($"There is already user with login {request.Login}");
 
-            var user = Utils.TransferData<User, CreateNewUser>(request);
-            user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password, Salt);
-            await _context.Users.AddAsync(user);
-            await _context.SaveChangesAsync();
             return Ok(new
             {
                 userId =
-                    user.Id
+                    _user.Create(request)
             });
         }
 
@@ -87,14 +67,14 @@ namespace LibApi.Controllers
         [Authorize(Roles = "admin")]
         public ActionResult GetAllUsers()
         {
-            return Ok(_context.Users.ToList().Select(Utils.TransferData<GetUserResponse, User>).ToList());
+            return Ok(_user.GetAll().Select(Utils.TransferData<GetUserResponse, User>).ToList());
         }
 
         [HttpGet("{userId}")]
         [Authorize(Roles = "admin")]
         public ActionResult GetUserById(int userId)
         {
-            var user = _context.Users.FirstOrDefault(i => i.Id == userId);
+            var user = _user.Get(userId);
 
             if (user is null)
                 return NotFound($"No user with id {userId}");
@@ -118,14 +98,11 @@ namespace LibApi.Controllers
             if (ChechFromJWT(ClaimTypes.Authentication, request.Id.ToString()) &&
                 ChechFromJWT(ClaimTypes.Role, "admin"))
                 return Unauthorized("User can update profile only for his account");
-            var user = _context.Users.FirstOrDefault(i => i.Id == request.Id);
 
-            if (user is null)
+            if (!_user.IsExists(request.Id))
                 return NotFound($"No user with id {request.Id}");
 
-            Utils.TransferData(user, request);
-
-            await _context.SaveChangesAsync();
+            await _user.Update(request.Id, request);
 
             return Ok();
         }
@@ -138,13 +115,12 @@ namespace LibApi.Controllers
                 ChechFromJWT(ClaimTypes.Role, "admin"))
                 return Unauthorized("User can delete profile only for his account");
 
-            var user = _context.Users.FirstOrDefault(i => i.Id == userId);
 
-            if (user is null)
+            if (!_user.IsExists(userId))
                 return NotFound($"No user with id {userId}");
 
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
+            await _user.Delete(userId);
+            
             return Ok();
         }
 
@@ -155,12 +131,11 @@ namespace LibApi.Controllers
             if (ChechFromJWT(ClaimTypes.Authentication, userId.ToString()) &&
                 ChechFromJWT(ClaimTypes.Role, "admin"))
                 return Unauthorized("User can see books only for his account");
-            var user = _context.Users.FirstOrDefault(i => i.Id == userId);
-
-            if (user is null)
+            
+            if(!_user.IsExists(userId))
                 return NotFound($"No user with id {userId}");
 
-            var books = _context.BookCopies.Where(i => i.UserId == userId).ToList()
+            var books = _user.BooksOf(userId)
                 .Select(Utils.TransferData<BookCopyResponse, BookCopy>);
             return Ok(books);
         }

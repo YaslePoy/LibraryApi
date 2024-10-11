@@ -2,4 +2,5 @@
 
 public interface IPaymentService
 {
+    Task AccountReplenishment(int userId, decimal money);
 }

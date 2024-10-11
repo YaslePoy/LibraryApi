@@ -26,6 +26,12 @@ public class BooksController : Controller
         return Ok(_book.GetAll());
     }
 
+    [HttpGet("filter}")]
+    public ActionResult<IReadOnlyList<BookData>> GetFiltredBooks(string? author, int? genre, int? year)
+    {
+        return _book.BooksWithFilter(author, genre, year).Select(Utils.TransferData<BookData, Book>).ToList();
+    }
+    
     [HttpGet("{bookId:int}")]
     public ActionResult<BookData> GetBook(int bookId)
     {

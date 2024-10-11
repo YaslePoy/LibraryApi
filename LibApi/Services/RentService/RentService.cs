@@ -58,29 +58,45 @@ public class RentService : IRentService
         return rent.Id;
     }
 
-    public Task Return(int rentId)
+    public async Task Return(int rentId)
     {
-        throw new NotImplementedException();
+        var rent = _libApi.BookRentals.Include(i => i.BookCopy).FirstOrDefault(i => i.Id == rentId);
+        rent.IsReturned = true;
+        rent.BookCopy.UserId = null;
+        rent.BookCopy.User = null;
+
+        await _libApi.SaveChangesAsync();
     }
 
     public IReadOnlyList<BookRental> UserHistory(int userId)
     {
-        throw new NotImplementedException();
+        return _libApi.BookRentals.Where(i => i.Payment.UserId == userId).ToList();
     }
 
     public IReadOnlyList<BookRental> BookHistory(int bookId)
     {
-        throw new NotImplementedException();
+        return _libApi.BookRentals.Where(i => i.BookCopyId == bookId).ToList();
     }
 
     public IReadOnlyList<BookRental> Current()
     {
-        throw new NotImplementedException();
+        return _libApi.BookRentals.Where(i => i.IsReturned == false).Include(i => i.BookCopy)
+            .Include(i => i.BookCopy.Book).ToList();
     }
 
-    public Task Loss(int rentId)
+    public async Task Loss(int rentId)
     {
-        throw new NotImplementedException();
+        var rent = GetExtended(rentId);
+        rent.BookCopy.IsLost = true;
+        rent.Payment.User.Balance -= rent.BookCopy.Cost;
+        var transaction = new Transaction
+        {
+            UserId = rent.Payment.UserId,
+            Movement = -rent.BookCopy.Cost,
+            TransactionTime = DateTime.Now
+        };
+        await _libApi.Transactions.AddAsync(transaction);
+        await _libApi.SaveChangesAsync();
     }
 
     public BookRental Get(int id)
@@ -90,11 +106,13 @@ public class RentService : IRentService
 
     public BookRental? GetExtended(int id)
     {
-        throw new NotImplementedException();
+        return _libApi.BookRentals.Include(i => i.BookCopy)
+            .Include(bookRental => bookRental.Payment.User).FirstOrDefault(i => i.Id == id);
+        
     }
 
     public bool IsExists(int id)
     {
-        throw new NotImplementedException();
+        return _libApi.BookRentals.Any(i => i.Id == id);
     }
 }

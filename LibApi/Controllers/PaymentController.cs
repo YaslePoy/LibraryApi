@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using LibApi.DataBaseContext;
 using LibApi.Model;
+using LibApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -17,10 +18,12 @@ public class PaymentController : CheckController
     public static readonly HashSet<string> PaymentIds = new HashSet<string>();
 
     private readonly LibApiContext _libApi;
+    private readonly IPaymentService _paymentService;
 
-    public PaymentController(LibApiContext libApi)
+    public PaymentController(LibApiContext libApi, IPaymentService paymentService)
     {
         _libApi = libApi;
+        _paymentService = paymentService;
     }
 
     [HttpGet("replenishment")]
@@ -67,17 +70,8 @@ public class PaymentController : CheckController
         if (user is null)
             return NotFound($"No user with id {userId}");
 
-        user.Balance += money;
+        await _paymentService.AccountReplenishment(userId, money);
 
-        var transaction = new Transaction
-        {
-            UserId = userId,
-            Movement = money,
-            TransactionTime = DateTime.Now
-        };
-
-        await _libApi.Transactions.AddAsync(transaction);
-        await _libApi.SaveChangesAsync();
         return Ok();
     }
 
