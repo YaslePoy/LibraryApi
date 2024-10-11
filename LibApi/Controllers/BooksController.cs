@@ -21,9 +21,9 @@ public class BooksController : Controller
     }
 
     [HttpGet("all")]
-    public ActionResult<IReadOnlyList<Book>> GetAllBooks()
+    public ActionResult<IReadOnlyList<Book>> GetAllBooks(int page, int pageSize)
     {
-        return Ok(_book.GetAll());
+        return Ok(_book.GetAll().Chunk(pageSize).ToArray()[page]);
     }
 
     [HttpGet("filter}")]
@@ -122,30 +122,30 @@ public class BooksController : Controller
     }
 
     [HttpGet("genre/{genreId}")]
-    public ActionResult<Book> GetBooksByGenre(int genreId)
+    public ActionResult<Book> GetBooksByGenre(int genreId,int page, int pageSize)
     {
         if (!_genre.IsExists(genreId))
             return NotFound($"No genre with id {genreId}");
 
-        return Ok(_book.BooksWithGenre(genreId));
+        return Ok(_book.BooksWithGenre(genreId).Chunk(pageSize).ToArray()[page]);
     }
 
     [HttpGet("author")]
-    public ActionResult<IReadOnlyList<Book>> GetBooksByAuthor(string author)
+    public ActionResult<IReadOnlyList<Book>> GetBooksByAuthor(string author,int page, int pageSize)
     {
-        return Ok(_book.BooksWithAuthor(author).Select(Utils.TransferData<BookData, Book>));
+        return Ok(_book.BooksWithAuthor(author).Select(Utils.TransferData<BookData, Book>).Chunk(pageSize).ToArray()[page]);
     }
 
     [HttpGet("name")]
-    public ActionResult<IReadOnlyList<Book>> GetBooksByName(string name)
+    public ActionResult<IReadOnlyList<Book>> GetBooksByName(string name,int page, int pageSize)
     {
-        return Ok(_book.BooksWithName(name).Select(Utils.TransferData<BookData, Book>));
+        return Ok(_book.BooksWithName(name).Select(Utils.TransferData<BookData, Book>).Chunk(pageSize).ToArray()[page]);
     }
 
     [HttpGet("copies")]
-    public ActionResult<IReadOnlyList<BookCopy>> GetAllCopies()
+    public ActionResult<IReadOnlyList<BookCopy>> GetAllCopies(int page, int pageSize)
     {
-        return Ok(_book.AllCopies());
+        return Ok(_book.AllCopies().Chunk(pageSize).ToArray()[page]);
     }
 
     [HttpGet("copies/{copyId}")]
