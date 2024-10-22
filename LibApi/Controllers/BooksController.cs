@@ -26,12 +26,12 @@ public class BooksController : Controller
         return Ok(_book.GetAll().Chunk(pageSize).ToArray()[page]);
     }
 
-    [HttpGet("filter}")]
+    [HttpGet("filter")]
     public ActionResult<IReadOnlyList<BookData>> GetFiltredBooks(string? author, int? genre, int? year)
     {
         return _book.BooksWithFilter(author, genre, year).Select(Utils.TransferData<BookData, Book>).ToList();
     }
-    
+
     [HttpGet("{bookId:int}")]
     public ActionResult<BookData> GetBook(int bookId)
     {
@@ -122,7 +122,7 @@ public class BooksController : Controller
     }
 
     [HttpGet("genre/{genreId}")]
-    public ActionResult<Book> GetBooksByGenre(int genreId,int page, int pageSize)
+    public ActionResult<Book> GetBooksByGenre(int genreId, int page, int pageSize)
     {
         if (!_genre.IsExists(genreId))
             return NotFound($"No genre with id {genreId}");
@@ -131,13 +131,14 @@ public class BooksController : Controller
     }
 
     [HttpGet("author")]
-    public ActionResult<IReadOnlyList<Book>> GetBooksByAuthor(string author,int page, int pageSize)
+    public ActionResult<IReadOnlyList<Book>> GetBooksByAuthor(string author, int page, int pageSize)
     {
-        return Ok(_book.BooksWithAuthor(author).Select(Utils.TransferData<BookData, Book>).Chunk(pageSize).ToArray()[page]);
+        return Ok(
+            _book.BooksWithAuthor(author).Select(Utils.TransferData<BookData, Book>).Chunk(pageSize).ToArray()[page]);
     }
 
     [HttpGet("name")]
-    public ActionResult<IReadOnlyList<Book>> GetBooksByName(string name,int page, int pageSize)
+    public ActionResult<IReadOnlyList<Book>> GetBooksByName(string name, int page, int pageSize)
     {
         return Ok(_book.BooksWithName(name).Select(Utils.TransferData<BookData, Book>).Chunk(pageSize).ToArray()[page]);
     }
