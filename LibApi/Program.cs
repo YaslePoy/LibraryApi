@@ -1,43 +1,34 @@
 using System.Text;
-using Microsoft.EntityFrameworkCore;
-using LibApi.DataBaseContext;
-using LibApi.Services;
-using LibApi.Services.BookService;
-using LibApi.Services.GenreService;
-using LibApi.Services.RentService;
-using LibApi.Services.UserService;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
+using ProxyKit;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddAuthorization();
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            // указывает, будет ли валидироваться издатель при валидации токена
-            ValidateIssuer = true,
-            // строка, представляющая издателя
-            ValidIssuer = AuthOptions.ISSUER,
-            // будет ли валидироваться потребитель токена
-            ValidateAudience = true,
-            // установка потребителя токена
-            ValidAudience = AuthOptions.AUDIENCE,
-            // будет ли валидироваться время существования
-            ValidateLifetime = true,
-            // установка ключа безопасности
-            IssuerSigningKey = AuthOptions.GetSymmetricSecurityKey(),
-            // валидация ключа безопасности
-            ValidateIssuerSigningKey = true,
-        };
-    });
+// builder.Services.AddAuthorization();
+// builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+//     .AddJwtBearer(options =>
+//     {
+//         options.TokenValidationParameters = new TokenValidationParameters
+//         {
+//             // указывает, будет ли валидироваться издатель при валидации токена
+//             ValidateIssuer = true,
+//             // строка, представляющая издателя
+//             ValidIssuer = AuthOptions.ISSUER,
+//             // будет ли валидироваться потребитель токена
+//             ValidateAudience = true,
+//             // установка потребителя токена
+//             ValidAudience = AuthOptions.AUDIENCE,
+//             // будет ли валидироваться время существования
+//             ValidateLifetime = true,
+//             // установка ключа безопасности
+//             IssuerSigningKey = AuthOptions.GetSymmetricSecurityKey(),
+//             // валидация ключа безопасности
+//             ValidateIssuerSigningKey = true,
+//         };
+//     });
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -53,24 +44,34 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader());
 });
 
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IBookService, BookService>();
-builder.Services.AddScoped<IPaymentService, PaymentService>();
-builder.Services.AddScoped<IRentService, RentService>();
-builder.Services.AddScoped<IGenreService, GenreService>();
-builder.Services.AddDbContext<LibApiContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DBConnection")), ServiceLifetime.Scoped);
-
+builder.Services.AddProxy();
 var app = builder.Build();
 
-app.UseAuthentication();
+// app.UseAuthentication();
+// app.UseAuthorization();
 app.UseAuthorization();
-// Configure the HTTP request pipeline.
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseWhen(context => context.Request.Path.Value.Contains("/api/Books"),
+    applicationBuilder => applicationBuilder.RunProxy(context =>
+        context.ForwardTo("http://localhost:5187").AddXForwardedHeaders().Send()));
+app.UseWhen(context => context.Request.Path.Value.Contains("/api/Genres"),
+    applicationBuilder => applicationBuilder.RunProxy(context =>
+        context.ForwardTo("http://localhost:5187").AddXForwardedHeaders().Send()));
+app.UseWhen(context => context.Request.Path.Value.Contains("/api/Payment"),
+    applicationBuilder => applicationBuilder.RunProxy(context =>
+        context.ForwardTo("http://localhost:5187").AddXForwardedHeaders().Send()));
+app.UseWhen(context => context.Request.Path.Value.Contains("/api/Rent"),
+    applicationBuilder => applicationBuilder.RunProxy(context =>
+        context.ForwardTo("http://localhost:5187").AddXForwardedHeaders().Send()));
+app.UseWhen(context => context.Request.Path.Value.Contains("/api/Users"),
+    applicationBuilder => applicationBuilder.RunProxy(context =>
+        context.ForwardTo("http://localhost:5178").AddXForwardedHeaders().Send()));
 
 app.UseCors("CorsPolicy");
 
